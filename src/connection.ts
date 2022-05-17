@@ -46,6 +46,10 @@ import type {Blockhash} from './blockhash';
 import type {FeeCalculator} from './fee-calculator';
 import type {TransactionSignature} from './transaction';
 import type {CompiledInstruction} from './message';
+import {
+  IWSClientAdditionalOptions,
+  NodeWebSocketTypeOptions,
+} from 'rpc-websockets/dist/lib/client/client.types';
 
 const PublicKeyFromString = coerce(
   instance(PublicKey),
@@ -2187,6 +2191,8 @@ export type ConnectionConfig = {
   fetchMiddleware?: FetchMiddleware;
   /** Optional Disable retrying calls when server responds with HTTP 429 (Too Many Requests) */
   disableRetryOnRateLimit?: boolean;
+  /** Optional websocket options */
+  websocketOptions?: IWSClientAdditionalOptions & NodeWebSocketTypeOptions;
   /** time to allow for the server to initially process a transaction (in milliseconds) */
   confirmTransactionInitialTimeout?: number;
 };
@@ -2280,6 +2286,7 @@ export class Connection {
     let fetch;
     let fetchMiddleware;
     let disableRetryOnRateLimit;
+    let websocketOptions;
     if (commitmentOrConfig && typeof commitmentOrConfig === 'string') {
       this._commitment = commitmentOrConfig;
     } else if (commitmentOrConfig) {
@@ -2291,6 +2298,7 @@ export class Connection {
       fetch = commitmentOrConfig.fetch;
       fetchMiddleware = commitmentOrConfig.fetchMiddleware;
       disableRetryOnRateLimit = commitmentOrConfig.disableRetryOnRateLimit;
+      websocketOptions = commitmentOrConfig.websocketOptions;
     }
 
     this._rpcEndpoint = endpoint;
@@ -2310,6 +2318,7 @@ export class Connection {
     this._rpcWebSocket = new RpcWebSocketClient(this._rpcWsEndpoint, {
       autoconnect: false,
       max_reconnects: Infinity,
+      ...websocketOptions,
     });
     this._rpcWebSocket.on('open', this._wsOnOpen.bind(this));
     this._rpcWebSocket.on('error', this._wsOnError.bind(this));
